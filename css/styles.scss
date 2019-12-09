@@ -1,0 +1,24 @@
+@import "../scss/bootstrap.scss";
+
+
+.navbar {
+    .dropdown-menu {
+        left:auto;
+        right:0; 
+    }
+}
+
+.square-img {
+    position:relative;
+    padding-top: 100%;
+    overflow: hidden;
+
+    img {
+        position: absolute;
+        object-fit: cover;
+        min-width: 100%;
+        min-height: 100%;
+        top:0;
+        left: 0;
+    }
+}
