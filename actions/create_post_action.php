@@ -31,7 +31,16 @@ if( isset($_SESSION["user_id"]) && ( $_SESSION["role"] < 3 )):
         ) {
             // File is correct type and size
             
+
             $file_name = $_SERVER["DOCUMENT_ROOT"] ."/uploads/". $_FILES["featured_image"]["name"];
+
+            $file_name = explode(".", $file_name); // explode a string into an array
+            $file_extension = strtolower( end( $file_name ) ); // get the last element of the array
+            array_pop($file_name); // remove the last element from the array
+            $file_name[] = date("YmdHis"); // get current datetime
+            $file_name[] = $file_extension; // Add the extension back to the end of the array
+            $file_name = implode(".", $file_name); // glues a array together into a string
+
             // Check if file already exists
             if( !file_exists( $file_name ) ) {
                 // upload to uploads folder

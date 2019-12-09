@@ -34,7 +34,7 @@ require_once("header.php");
         
         }
 
-        echo $users_query;
+
         if($users_result = mysqli_query($conn, $users_query)) {
             while($user_row = mysqli_fetch_array($users_result)) {
                 //print_r($user_row);

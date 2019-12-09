@@ -4,6 +4,11 @@ require_once("header.php");
 <div class="container">
     <div class="row">
         <?php
+        /*-----------------------
+        *
+        *   SINGLE ARTICLE
+        *
+         ------------------------*/
         if(isset($_GET["id"])){
 
             $article_query = "  SELECT articles.*, 
@@ -47,6 +52,12 @@ require_once("header.php");
             }
         
         } else {
+        /*-----------------------
+        *
+        *   ALL ARTICLES
+        *
+        ------------------------*/
+
             // ELSE if no ID set, show ALL articles
             // if query include search
             $search_query = (isset($_GET["search"])) ? $_GET["search"] : false;
@@ -65,18 +76,60 @@ require_once("header.php");
                               LEFT JOIN images
                               ON articles.image_id = images.id
                               LEFT JOIN users
-                              ON articles.author_id = users.id";
-                              
+                              ON articles.author_id = users.id ";
+
+            $art_where_search = "";
             if($search_query) {
-                $article_query .= " WHERE articles.title LIKE '%$search_query%' 
+                $art_where_search = " WHERE articles.title LIKE '%$search_query%' 
                                  OR articles.content LIKE '%$search_query%'";
+                $article_query .= $art_where_search;
             }
 
-            $article_query .= " ORDER BY articles.date_created DESC";
+            $current_page = (isset($_GET["page"])) ? $_GET["page"] : 1;
+            $limit = 5;
+            $offset = $limit * ($current_page - 1);
+
+            $article_query .= " ORDER BY articles.date_created DESC
+                                LIMIT $limit OFFSET $offset";
 
 
 
             if($article_result = mysqli_query($conn, $article_query)) {
+                
+                // GET the total count of articles
+                $pagi_query = "SELECT COUNT(*) AS total FROM articles";
+                if($search_query){
+                    $pagi_query .= $art_where_search;
+                }
+
+                $pagi_result = mysqli_query($conn, $pagi_query);
+                $pagi_row = mysqli_fetch_array($pagi_result);
+                $total_articles = $pagi_row["total"];
+
+                $page_count = ceil($total_articles / $limit);
+                // floor = round down
+                // ceil = round up
+                // round = round down if below 5, round up if above 5
+                echo "<nav aria-label='Page navigation'><ul class='pagination'>";
+
+                $get_search = ($search_query) ? "&search=".$search_query : "";
+                
+                if($current_page > 1){
+                    echo "<li class='page-item'><a class='page-link' href='/articles.php?page=".( $current_page - 1)."$get_search'>Previous</a></li>";
+                }
+
+                for($i = 1; $i <= $page_count; $i++){
+                    echo "<li class='page-item";
+                    if($current_page == $i) echo " active";
+                    echo "'><a class='page-link' href='/articles.php?page=$i".$get_search."'>$i</a></li>";
+                }
+                if($current_page < $page_count){
+                    echo "<li class='page-item'><a class='page-link' href='/articles.php?page=".( $current_page + 1 )."$get_search'>Next</a></li>";
+                }
+
+                echo '</ul></nav>';
+
+
                 while($article_row = mysqli_fetch_array($article_result)){
                     ?>
                     <div class="card col-12 mb-3">
