@@ -139,7 +139,7 @@ require_once("header.php");
                                     <img src="<?=$article_row["featured_image"]?>" class="card-img">
                                 </div>
                             </div>
-                            <div class="col-sm-9">
+                            <div class="col-sm-9" data-profile-id="1" data-title="My Title" data-comment="">
                                 <div class="card-body">
                                     <h5 class="card-title">
                                         <a href="/articles.php?id=<?=$article_row["id"]?>"><?=$article_row["title"]?></a>
