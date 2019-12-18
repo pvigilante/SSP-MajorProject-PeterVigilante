@@ -1,9 +1,38 @@
 <?php
 require_once("header.php");
+
+/*
+Push to GitHub
+Going Live
+*/
+
+
 ?>
 <div class="container">
+    <form class="row" action="articles.php" id="store_page">
+        <div class="col-12">
+            <select name="sort_by" id="sort_by">
+                <option value="low_high" <?=(isset($_GET["sort_by"]) && $_GET["sort_by"] == "low_high")?"selected":"";?>>Low to High</option>
+                <option value="high_low" <?=(isset($_GET["sort_by"]) && $_GET["sort_by"] == "high_low")?"selected":"";?>>High to Low</option>
+            </select>
+
+            <div class="input-group">
+                <input type="checkbox" name="brands[]" value="1" >Rolex<br>
+                <input type="checkbox" name="brands[]" value="2">Apple<br>
+                <input type="checkbox" name="brands[]" value="3">Samsung<br>
+            </div>
+            <div class="input-group">
+                <input type="checkbox" name="pricerange[]" value="range1" <?=(isset($_GET["pricerange"]) && in_array("range1", $_GET["pricerange"]))?"checked":"";?>>0 - 100<br>
+                <input type="checkbox" name="pricerange[]" value="range2">100 - 200<br>
+                <input type="checkbox" name="pricerange[]" value="range3">200 - 500<br>
+            </div>
+        </div>
+        <button type="submit">Sort</button>
+    </form>
     <div class="row">
         <?php
+
+        echo "$".number_format(100100, 2);
         /*-----------------------
         *
         *   SINGLE ARTICLE
@@ -57,7 +86,7 @@ require_once("header.php");
         *   ALL ARTICLES
         *
         ------------------------*/
-
+            
             // ELSE if no ID set, show ALL articles
             // if query include search
             $search_query = (isset($_GET["search"])) ? $_GET["search"] : false;
@@ -69,9 +98,11 @@ require_once("header.php");
             }
             
             // Output all Articles
+
+            
             
             $article_query = "SELECT articles.title, images.url AS featured_image, articles.author_id, 
-                                     users.first_name, users.last_name, articles.date_created, articles.id
+                                     users.first_name, users.last_name, articles.date_created, articles.id, articles.views
                               FROM articles
                               LEFT JOIN images
                               ON articles.image_id = images.id
@@ -82,14 +113,45 @@ require_once("header.php");
             if($search_query) {
                 $art_where_search = " WHERE articles.title LIKE '%$search_query%' 
                                  OR articles.content LIKE '%$search_query%'";
-                $article_query .= $art_where_search;
+                
+            } else {
+                $art_where_search .= " WHERE articles.title IS NOT NULL ";
+            }
+
+            if(isset($_GET["pricerange"])) {
+                $pricerange = $_GET["pricerange"];
+                $art_where_search .= " AND (";
+                $i = 0;
+                foreach($pricerange as $range){
+                    if($i > 0) $art_where_search .= " OR ";
+                    $i++;
+                    switch($range){
+                        case "range1":
+                            $art_where_search .= " (articles.price_int > 0";
+                            $art_where_search .= " AND articles.price_int < 100)";
+                        break;
+                        case "range2":
+                            $art_where_search .= " (articles.price_int > 100";
+                            $art_where_search .= " AND articles.price_int < 200)";
+                        break;
+                        case "range3":
+                            $art_where_search .= " (articles.price_int > 200";
+                            $art_where_search .= " AND articles.price_int < 500)";
+                        break;
+                    }
+                    
+                }
+                $art_where_search .= ")";
             }
 
             $current_page = (isset($_GET["page"])) ? $_GET["page"] : 1;
             $limit = 5;
             $offset = $limit * ($current_page - 1);
 
-            $article_query .= " ORDER BY articles.date_created DESC
+            $sort_dir = (isset($_GET["sort_by"]) && $_GET["sort_by"] == "low_high") ? "ASC" :"DESC";
+            
+            $article_query .= $art_where_search;
+            $article_query .= " ORDER BY articles.date_created $sort_dir
                                 LIMIT $limit OFFSET $offset";
 
 
@@ -131,6 +193,10 @@ require_once("header.php");
 
 
                 while($article_row = mysqli_fetch_array($article_result)){
+                    
+                    $update_views_query = "UPDATE articles SET views = " . ( $article_row["views"] += 1 ) . " WHERE id = " . $article_row["id"];
+                    print_r($update_views_query);
+                    mysqli_query($conn, $update_views_query);
                     ?>
                     <div class="card col-12 mb-3">
                         <div class="row no-gutters">
@@ -145,6 +211,9 @@ require_once("header.php");
                                         <a href="/articles.php?id=<?=$article_row["id"]?>"><?=$article_row["title"]?></a>
                                     </h5>
                                     <small class="text-muted"><?="By ".$article_row["first_name"]." ".$article_row["last_name"]." on ".date("M jS, Y @ hA", strtotime($article_row["date_created"]))?></small>
+                                    <p>
+                                    <?php echo "Views: ".$article_row["views"]; ?> 
+                                    </p>
                                     <p>
                                         <a href="/articles.php?id=<?=$article_row["id"]?>">Read More</a>
                                     </p>
